@@ -39,6 +39,26 @@
 .content {
   height: 80%;
   width: 100%;
+
+  overflow-x: scroll;
+  white-space: nowrap;
   
   background-color: #00ff00;
+}
+
+.content > div {
+  width: 20em;
+  height: 100%;
+
+  text-align: center;
+
+  margin-right: 1em;
+  margin-left: 1em;
+
+  border-radius: 2em;
+
+  background-color: #FFFF00;
+
+  display: inline-block;
+  vertical-align: top;
 }
