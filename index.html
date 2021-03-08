@@ -12,21 +12,21 @@
   <script src="scripts.js"></script>
 </head>
 
-<body style="padding: 0; margin: 0;">
+<body class="body">
   <noscript>Enabling JS makes this site cooler</noscript>
 
   <div class="container">
     <div class="header">
       <div class="header-content">
         <p class="header-text">bonbon</p>
-        <p id="date-view" class="header-text">Viewing: Today</p>
+        <p id="date-view" class="header-text">Viewing: This Week</p>
         <div class="btn-row">
           <button>Today</button>
           <button>This Week</button>
           <button>Two Weeks</button>
         </div>
-        <form id="form">
-          <input type="text" id="input"/>
+        <form id="form" autocomplete="off">
+          <input type="text" id="input" autocomplete="off"/>
           <button id="add-event" type="submit">Add Event</button>
         </form>
       </div>

@@ -1,3 +1,8 @@
+.body {
+  padding: 0;
+  margin: 0;
+}
+
 .container {
   height: 100vh; 
   width: 100vw; 
@@ -11,8 +16,6 @@
   height: 15%;
   width: 100%;
   
-  background-color: #ff0000;
-
   display: flex; 
   flex-direction: row; 
   justify-content: space-around;
@@ -30,10 +33,19 @@
   margin: 0.5em;
 }
 
-
 .btn-row {
   padding-top: 0;
   padding-bottom: 0;
+}
+
+.col-title-container {
+  height: 10%;
+
+  border-bottom: 2px solid black;
+}
+
+.drop-zone {
+  height: 90%;
 }
 
 .content {
@@ -42,13 +54,14 @@
 
   overflow-x: scroll;
   white-space: nowrap;
-  
-  background-color: #00ff00;
 }
 
 .content > div {
   width: 20em;
   height: 100%;
+  max-height: 100%;
+
+  overflow-y: scroll;
 
   text-align: center;
 
@@ -57,8 +70,20 @@
 
   border-radius: 2em;
 
-  background-color: #FFFF00;
+  background-color: #D3D3D3;
 
   display: inline-block;
   vertical-align: top;
+}
+
+.todo {
+  margin-bottom: 1em;
+
+  display: flex;
+  flex-direction: row;
+
+  align-items: center;
+  justify-content: space-around;
+
+  background-color: #F0F0F0;
 }

@@ -6,69 +6,169 @@
 
 const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-const clearTodos = function () {
-  var es = document.querySelectorAll(".todo");
+let dateRange = 15;
+let draggedTodoText = {};
 
-  if (es) {
-    es.forEach(e => e.parentNode.removeChild(e));
+// TODO: incorporate this as id's for todos
+let todoCount = 0;
+
+const clearTodos = function () {
+  var todoCards = document.querySelectorAll(".todo");
+
+  if (todoCards) {
+    todoCards.forEach(todo => todo.parentNode.removeChild(e));
   }
 }
 
-document.addEventListener('DOMContentLoaded', (event) => {
-  const addTodosToDOM = function (todos) {
-    clearTodos();
+const removeTodo = (todoText) => {
+  let todos = JSON.parse(localStorage.getItem("todos"));
 
-    todos.forEach(todo => {
-      // since todo date will be correctly formatted this is safe
-      const currDate = new Date();
-      var todoDate = Date.parse(todo.date);
-      var dateDiff = Math.floor((todoDate - currDate) / (1000 * 3600 * 24)) + 2;
+  let newTodos = todos.filter(el => el.text !== todoText);
 
-      if (dateDiff < 15) {
-        if (dateDiff <= 0) {
-          var id = "day-0";
-        } else if (dateDiff < 15) {
-          var id = "day-" + dateDiff;
-        }
+  sortSetAddTodos(newTodos);
+};
 
-        var todoColumn = document.getElementById(id);
-        var newTodoElement = document.createElement('p');
-        newTodoElement.innerText = todo.text;
-        newTodoElement.className = "todo";
+const createTodoElement = (text) => {
+  let container = document.createElement('div');
+  let txt = document.createElement('p');
+  let close = document.createElement('button');
 
-        todoColumn.appendChild(newTodoElement);
+  container.className = "todo";
+  container.draggable = true;
+  container.addEventListener('dragstart', () => draggedTodoText = text);
+  
+  txt.innerText = text;
+
+  close.innerText = 'complete';
+  close.addEventListener('click', () => removeTodo(text));
+  
+  container.appendChild(txt);
+  container.appendChild(close);
+  
+  return container;
+};
+
+const sortSetAddTodos = (todos) => {
+  todos.sort((e1, e2) => e1.date < e2.date);
+  localStorage.setItem("todos", JSON.stringify(todos));
+
+  addTodosToDOM(todos);
+};
+
+// takes in a list of 'todo elements' from local storage
+// iterates through and only adds todos that fit within 
+const addTodosToDOM = function (todos) {
+  clearTodos();
+
+  todos.forEach(todo => {
+    // since todo date will be correctly formatted this is safe
+    const currDate = new Date();
+    var todoDate = Date.parse(todo.date);
+    // calculate number of days between dates
+    var dateDiff = Math.floor((todoDate - currDate) / (1000 * 3600 * 24)) + 2;
+
+    if (dateDiff < dateRange) {
+      if (dateDiff <= 0) {
+        var id = "day-0";
+      } else if (dateDiff < dateRange) {
+        var id = "day-" + dateDiff;
       }
-    });
-  };
 
+      var newTodoElement = createTodoElement(todo.text);
+
+      var column = document.getElementById(id);
+
+      for (var i = 0; i < column.childNodes.length; i++) {
+        if (column.childNodes[i].className == "drop-zone") {
+          column.childNodes[i].appendChild(newTodoElement);
+          break;
+        }
+      }
+    }
+  });
+};
+
+const changeDateRange = function (dateRange) {
+  document.getElementById('date-view').innerHTML = "Viewing: " + dateRange;
+
+  if (dateRange === "Today") {
+    dateRange = 1;
+  } else if (dateRange === "This Week") {
+    dateRange = 7;
+  } else {
+    dateRange = 14;
+  }
+
+  for (var i = 2; i <= 14; i++) {
+    var id = "day-" + i;
+    var el = document.getElementById(id);
+
+    if (dateRange - i >= 0) {
+      el.style.display = '';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+};
+
+// Initialize bonbon
+document.addEventListener('DOMContentLoaded', (event) => {
   var contentContainerElement = document.getElementById('content');
 
   for (i = 0; i < 15; i++) {
-    var el = document.createElement('div');
-    el.id = "day-" + i;
+    var column = document.createElement('div');
+    column.id = "day-" + i;
+
+    let dropZone = document.createElement('div');
+    dropZone.className = 'drop-zone';
+
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault(); 
+
+      const targetDate = e.target.dataset.date;
+      var todos = JSON.parse(localStorage.getItem("todos"));
+
+      for (i = 0; i < todos.length; i++) {
+        if (todos[i].text === draggedTodoText) {
+          todos[i].date = targetDate;
+          break;
+        }
+      }
+
+      sortSetAddTodos(todos);
+    });
+
+    let titleContainer = document.createElement('div');
+    titleContainer.className = 'col-title-container'
+    column.appendChild(titleContainer)
 
     var title = document.createElement('h4');
+    titleContainer.appendChild(title);
 
-    el.appendChild(title);
-    contentContainerElement.appendChild(el);
-
+    // if we aren't on 'past' column add date stuff
     if (i > 0) {
       const date = new Date();
       date.setDate(date.getDate() + i - 1);
-
+      
       title.innerText = date.toLocaleDateString();
-
+      
       var subtitle = document.createElement('h5');
       subtitle.innerText = daysOfWeek[date.getDay()];
-
+      
       if (i > 7) {
-        el.style.display = 'none';
+        column.style.display = 'none';
       }
-
-      el.appendChild(subtitle);
+      
+      titleContainer.appendChild(subtitle);
+      dropZone.setAttribute("data-date", date);
     } else {
-      title.innerText = "Past";
+      title.innerText = "Ongoing";
+      dropZone.setAttribute("data-date", 0);
     }
+
+    column.appendChild(dropZone);
+    contentContainerElement.appendChild(column);
   }
 
   // init todos array if not existant
@@ -78,63 +178,35 @@ document.addEventListener('DOMContentLoaded', (event) => {
   } else {
     addTodosToDOM(todos);
   }
-
-  const changeDateRange = function (dateRange) {
-    document.getElementById('date-view').innerHTML = "Viewing: " + dateRange;
-
-    var numOfDays = 0;
-    if (dateRange === "Today") {
-      numOfDays = 1;
-    } else if (dateRange === "This Week") {
-      numOfDays = 7;
-    } else {
-      numOfDays = 14;
-    }
-
-    for (var i = 2; i <= 14; i++) {
-      var id = "day-" + i;
-      var el = document.getElementById(id);
-
-      console.log(numOfDays + " " + i + " " + (numOfDays - i));
-      if (numOfDays - i >= 0) {
-        el.style.display = '';
-      } else {
-        el.style.display = 'none';
-      }
-    }
-  };
-
+  
+  // add click events for each date range button
   document.getElementsByClassName('btn-row')[0].childNodes.forEach(btn => {
     btn.addEventListener('click', (event) => {
       changeDateRange(event.target.firstChild.textContent.trim());
-
-      var clickSeq = JSON.parse(localStorage.getItem("clicks"));
-      if (clickSeq) {
-        clickSeq.push(event.target.firstChild.textContent);
-      } else {
-        clickSeq = [];
-      }
-      localStorage.setItem("clicks", JSON.stringify(clickSeq));
     });
-
   });
-
-  // add new todo
+  
+  // on form submit add new todo
   document.getElementById('form').addEventListener('submit', (event) => {
     event.preventDefault();
+    
     const inputText = document.getElementById('input').value;
-    const currDate = new Date();
-    const newTodo = { date: currDate, text: inputText };
-
-    var todos = JSON.parse(localStorage.getItem("todos"));
-
-    if (inputText && todos) {
-      todos.push(newTodo);
+    
+    if (!inputText) {
+      return;
     }
+    
+    const creationDate = new Date();
+    const newTodo = { date: creationDate, text: inputText };
+    
+    var todos = JSON.parse(localStorage.getItem("todos"));
+    
+    todos.push(newTodo);
+    
+    sortSetAddTodos(todos);
 
-    todos.sort((e1, e2) => e1.date < e2.date);
-    localStorage.setItem("todos", JSON.stringify(todos));
-
-    addTodosToDOM(todos);
-  })
+    // reset the form
+    var form = document.getElementById("form");
+    form.reset();
+  });
 });
