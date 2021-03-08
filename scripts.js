@@ -16,7 +16,7 @@ const clearTodos = function () {
   var todoCards = document.querySelectorAll(".todo");
 
   if (todoCards) {
-    todoCards.forEach(todo => todo.parentNode.removeChild(e));
+    todoCards.forEach(todo => todo.parentNode.removeChild(todo));
   }
 }
 
