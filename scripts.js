@@ -118,6 +118,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
   for (i = 0; i < 15; i++) {
     var column = document.createElement('div');
     column.id = "day-" + i;
+    column.className = 'day-column';
 
     let dropZone = document.createElement('div');
     dropZone.className = 'drop-zone';
