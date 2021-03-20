@@ -2,17 +2,30 @@
  * schedule-event:
  *   date - "YYYY/MM/DD"
  *   title - text
+ *   id - int
  */
 
+const INITIAL_DATE_RANGE = 15;
+const DROP_ZONE = 'drop-zone';
+
 const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+let dateRange = INITIAL_DATE_RANGE;
 
-let dateRange = 15;
-let draggedTodoText = {};
+// hacky workaround for now
+//let draggedTodoId = 0;
 
-// TODO: incorporate this as id's for todos
 let todoCount = 0;
 
-const clearTodos = function () {
+const createNewTodo = (text) => {
+  const creationDate = new Date();
+
+  const newTodo = { date: creationDate, text: text, id: todoCount };
+  todoCount += 1;
+
+  return newTodo;
+};
+
+const clearTodos = () => {
   var todoCards = document.querySelectorAll(".todo");
 
   if (todoCards) {
@@ -28,14 +41,14 @@ const removeTodo = (todoText) => {
   sortSetAddTodos(newTodos);
 };
 
-const createTodoElement = (text) => {
+const createTodoElement = (text, id) => {
   let container = document.createElement('div');
   let txt = document.createElement('p');
   let close = document.createElement('button');
 
   container.className = "todo";
   container.draggable = true;
-  container.addEventListener('dragstart', () => draggedTodoText = text);
+  container.addEventListener('dragstart', e => e.dataTransfer.setData("text/plain", id));
   
   txt.innerText = text;
 
@@ -64,9 +77,11 @@ const addTodosToDOM = function (todos) {
     // since todo date will be correctly formatted this is safe
     const currDate = new Date();
     var todoDate = Date.parse(todo.date);
+
     // calculate number of days between dates
     var dateDiff = Math.floor((todoDate - currDate) / (1000 * 3600 * 24)) + 2;
 
+    // figure out which date column to put todo into
     if (dateDiff < dateRange) {
       if (dateDiff <= 0) {
         var id = "day-0";
@@ -74,12 +89,12 @@ const addTodosToDOM = function (todos) {
         var id = "day-" + dateDiff;
       }
 
-      var newTodoElement = createTodoElement(todo.text);
+      var newTodoElement = createTodoElement(todo.text, todo.id);
 
       var column = document.getElementById(id);
 
       for (var i = 0; i < column.childNodes.length; i++) {
-        if (column.childNodes[i].className == "drop-zone") {
+        if (column.childNodes[i].className == DROP_ZONE) {
           column.childNodes[i].appendChild(newTodoElement);
           break;
         }
@@ -111,6 +126,32 @@ const changeDateRange = function (dateRange) {
   }
 };
 
+const dropTodoCard = (e) => {
+  e.preventDefault();
+
+  const draggedTodoId = parseInt(e.dataTransfer.getData("text/plain"));
+
+  // find valid drop zone for todo card
+  var validDropZone = e.target;
+  while (validDropZone.className !== DROP_ZONE) {
+    validDropZone = validDropZone.parentNode;
+  }
+
+  // the new date we want
+  const targetDate = validDropZone.dataset.date;
+
+  var todos = JSON.parse(localStorage.getItem("todos"));
+
+  for (i = 0; i < todos.length; i++) {
+    if (todos[i].id === draggedTodoId) {
+      todos[i].date = targetDate;
+      break;
+    }
+  }
+
+  sortSetAddTodos(todos);
+};
+
 // Initialize bonbon
 document.addEventListener('DOMContentLoaded', (event) => {
   var contentContainerElement = document.getElementById('content');
@@ -121,24 +162,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
     column.className = 'day-column';
 
     let dropZone = document.createElement('div');
-    dropZone.className = 'drop-zone';
+    dropZone.className = DROP_ZONE;
 
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); });
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault(); 
-
-      const targetDate = e.target.dataset.date;
-      var todos = JSON.parse(localStorage.getItem("todos"));
-
-      for (i = 0; i < todos.length; i++) {
-        if (todos[i].text === draggedTodoText) {
-          todos[i].date = targetDate;
-          break;
-        }
-      }
-
-      sortSetAddTodos(todos);
-    });
+    dropZone.addEventListener('drop', dropTodoCard);
 
     let titleContainer = document.createElement('div');
     titleContainer.className = 'col-title-container'
@@ -196,10 +223,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
     if (!inputText) {
       return;
     }
-    
-    const creationDate = new Date();
-    const newTodo = { date: creationDate, text: inputText };
-    
+
+    const newTodo = createNewTodo(inputText);
+
     var todos = JSON.parse(localStorage.getItem("todos"));
     
     todos.push(newTodo);
