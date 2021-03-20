@@ -33,10 +33,10 @@ const clearTodos = () => {
   }
 }
 
-const removeTodo = (todoText) => {
+const removeTodo = (id) => {
   let todos = JSON.parse(localStorage.getItem("todos"));
 
-  let newTodos = todos.filter(el => el.text !== todoText);
+  let newTodos = todos.filter(el => el.id !== id);
 
   sortSetAddTodos(newTodos);
 };
@@ -53,7 +53,7 @@ const createTodoElement = (text, id) => {
   txt.innerText = text;
 
   close.innerText = 'complete';
-  close.addEventListener('click', () => removeTodo(text));
+  close.addEventListener('click', () => removeTodo(id));
   
   container.appendChild(txt);
   container.appendChild(close);
@@ -152,11 +152,38 @@ const dropTodoCard = (e) => {
   sortSetAddTodos(todos);
 };
 
-// Initialize bonbon
+const handleFormSubmission = (event) => {
+  event.preventDefault();
+
+  const inputText = document.getElementById('input').value;
+
+  if (!inputText) {
+    return;
+  }
+
+  const newTodo = createNewTodo(inputText);
+
+  var todos = JSON.parse(localStorage.getItem("todos"));
+
+  todos.push(newTodo);
+
+  sortSetAddTodos(todos);
+
+  // reset the form
+  var form = document.getElementById("form");
+  form.reset();
+};
+
+/** Initialize BonBon
+ * 
+ * We will iterate through initial count of date columns we want and insert divs
+ * also initialize todos if we need to
+ * finally add in form and button operations
+ */
 document.addEventListener('DOMContentLoaded', (event) => {
   var contentContainerElement = document.getElementById('content');
 
-  for (i = 0; i < 15; i++) {
+  for (i = 0; i < INITIAL_DATE_RANGE; i++) {
     var column = document.createElement('div');
     column.id = "day-" + i;
     column.className = 'day-column';
@@ -215,25 +242,5 @@ document.addEventListener('DOMContentLoaded', (event) => {
   });
   
   // on form submit add new todo
-  document.getElementById('form').addEventListener('submit', (event) => {
-    event.preventDefault();
-    
-    const inputText = document.getElementById('input').value;
-    
-    if (!inputText) {
-      return;
-    }
-
-    const newTodo = createNewTodo(inputText);
-
-    var todos = JSON.parse(localStorage.getItem("todos"));
-    
-    todos.push(newTodo);
-    
-    sortSetAddTodos(todos);
-
-    // reset the form
-    var form = document.getElementById("form");
-    form.reset();
-  });
+  document.getElementById('form').addEventListener('submit', (event) => handleFormSubmission(event));
 });
