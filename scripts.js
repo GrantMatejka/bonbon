@@ -16,10 +16,10 @@ let dateRange = INITIAL_DATE_RANGE;
 
 let todoCount = 0;
 
-const createNewTodo = (text) => {
+const createNewTodo = (text, time) => {
   const creationDate = new Date();
 
-  const newTodo = { date: creationDate, text: text, id: todoCount };
+  const newTodo = { date: creationDate.toISOString().split('T')[0], text: text, time: time, id: todoCount };
   todoCount += 1;
 
   return newTodo;
@@ -41,19 +41,19 @@ const removeTodo = (id) => {
   sortSetAddTodos(newTodos);
 };
 
-const createTodoElement = (text, id) => {
+const createTodoElement = (todo) => {
   let container = document.createElement('div');
   let txt = document.createElement('p');
   let close = document.createElement('button');
 
   container.className = "todo";
   container.draggable = true;
-  container.addEventListener('dragstart', e => e.dataTransfer.setData("text/plain", id));
+  container.addEventListener('dragstart', e => e.dataTransfer.setData("text/plain", todo.id));
   
-  txt.innerText = text;
+  txt.innerText = todo.time ? todo.time + ' - ' + todo.text : todo.text;
 
   close.innerText = 'complete';
-  close.addEventListener('click', () => removeTodo(id));
+  close.addEventListener('click', () => removeTodo(todo.id));
   
   container.appendChild(txt);
   container.appendChild(close);
@@ -62,7 +62,15 @@ const createTodoElement = (text, id) => {
 };
 
 const sortSetAddTodos = (todos) => {
-  todos.sort((e1, e2) => e1.date < e2.date);
+  const todoSorter = (t1, t2) => {
+    if (t1.date.toString().substring(0, 15) < t2.date.toString().substring(0, 15)) return -1;
+    if (t1.date.toString().substring(0, 15) > t2.date.toString().substring(0, 15)) return 1;
+    if (parseInt(t1.time) < parseInt(t2.time)) return -1;
+    if (parseInt(t1.time) > parseInt(t2.time)) return 1;
+    return 0;
+  };
+
+  todos.sort(todoSorter);
   localStorage.setItem("todos", JSON.stringify(todos));
 
   addTodosToDOM(todos);
@@ -89,7 +97,7 @@ const addTodosToDOM = function (todos) {
         var id = "day-" + dateDiff;
       }
 
-      var newTodoElement = createTodoElement(todo.text, todo.id);
+      var newTodoElement = createTodoElement(todo);
 
       var column = document.getElementById(id);
 
@@ -156,12 +164,13 @@ const handleFormSubmission = (event) => {
   event.preventDefault();
 
   const inputText = document.getElementById('input').value;
+  const inputTime = document.getElementById('input-time').value;
 
   if (!inputText) {
     return;
   }
 
-  const newTodo = createNewTodo(inputText);
+  const newTodo = createNewTodo(inputText, inputTime);
 
   var todos = JSON.parse(localStorage.getItem("todos"));
 
@@ -216,7 +225,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
       }
       
       titleContainer.appendChild(subtitle);
-      dropZone.setAttribute("data-date", date);
+      dropZone.setAttribute("data-date", date.toISOString().split('T')[0]);
     } else {
       title.innerText = "Ongoing";
       dropZone.setAttribute("data-date", 0);
@@ -231,6 +240,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
   if (!todos) {
     localStorage.setItem("todos", JSON.stringify([]));
   } else {
+    // we need to get the maximum id so we know where to begin creating id's from
+    const maxTodoId = Math.max(...todos.map(el => parseInt(el.id)));
+    todoCount = maxTodoId + 1;
+
     addTodosToDOM(todos);
   }
   
